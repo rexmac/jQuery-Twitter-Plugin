@@ -21,6 +21,27 @@ var linkify = linkify || function() {};
     return str.replace(/[#]+[a-z0-9-_]+/ig, function( tag ) {
       return tag.link("http://search.twitter.com/search?q="+tag.replace("#","%23"));
     });
+  },
+  relativeTime = function( timeValue ) {
+    var parsedDate = Date.parse( timeValue ),
+        relativeTo = arguments.length > 1 ? arguments[1] : new Date(),
+        delta = parseInt( ( relativeTo.getTime() - parsedDate ) / 1000, 10 );
+    delta += ( relativeTo.getTimezoneOffset() * 60 );
+    if ( delta < 60 ) {
+      return 'less than a minute ago';
+    } else if ( delta < 120 ) {
+      return 'about a minute ago';
+    } else if ( delta < ( 60 * 60 ) ) {
+      return ( parseInt( delta / 60, 10 ) ).toString() + ' minutes ago';
+    } else if ( delta < ( 120 * 60 ) ) {
+      return 'about an hour ago';
+    } else if ( delta < ( 24 * 60 * 60 ) ) {
+      return 'about ' + ( parseInt(delta / 3600, 10 ) ).toString() + ' hours ago';
+    } else if ( delta < ( 48 * 60 * 60 ) ) {
+      return '1 day ago';
+    } else {
+      return ( parseInt( delta / 86400, 10 ) ).toString() + ' days ago';
+    }
   };
 
   $.twitter = function (options, callback) {
@@ -134,13 +155,22 @@ var linkify = linkify || function() {};
               }));
             }
 
-            // Make the tweet text, and append it to the $tweet, then to the parent
+            // Make the tweet text, and append it to the $tweet
             $tweet.append($("<span>", {
               "class": "content",
               html: "<a href='http://twitter.com/" + tweet.from_user + "'>@" + tweet.from_user + "</a>: " + mention(hashtags(linkify(tweet.text)))
-            }))
+            }));
+
+            // Append time to $tweet
+            if( query.time === true ) {
+              $tweet.append($("<span>", {
+                "class": "time",
+                html: " <a href='http://twitter.com/" + tweet.from_user + "/status/" + tweet.id_str + "'>" + relativeTime(tweet.created_at) + "</a>"
+              }));
+            }
+
             // Append tweet to the $tweets ul
-            .appendTo($tweets);
+            $tweet.appendTo($tweets);
 
             // Count up our counter variable
             limitInt++;

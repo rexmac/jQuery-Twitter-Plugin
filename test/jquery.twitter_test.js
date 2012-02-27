@@ -39,16 +39,22 @@
     // Temporarily replace $.twitter with a mock version that returns a pre-defined result
     $.oTwitter = $.twitter;
     $.twitter = function( options, callback ) {
-      var tweets = {
+      var date = new Date(),
+      tweets = {
         "results" : [{
+          "created_at": null,
+          "id_str": "123456",
           "from_user": "mediatemple",
           "text": "This text contains a @mention and a #hashtag"
         }]
       };
-      callback( tweets, {}, null );
+      // Add timezone offset of test machine to date to ensure we get a relative time of "less than a minute ago"
+      date.setSeconds( date.getSeconds() + date.getTimezoneOffset() * 60 );
+      tweets.results[0].created_at = date.toGMTString();
+      callback( tweets, options, null );
     };
 
-    $("#testlist6").twitter({ from: "mediatemple" });
+    $("#testlist6").twitter({ from: "mediatemple", time: true });
 
     // Replace original $.twitter function
     $.twitter = $.oTwitter;
@@ -142,6 +148,8 @@
       ok( $("#testlist6").children().find('a[href="http://twitter.com/mention"]').length, "Make sure @mentions are linked" );
 
       ok( $("#testlist6").children().find('a[href="http://search.twitter.com/search?q=%23hashtag"]').length, "Make sure #hashtags are linked" );
+
+      equal( $("#testlist6").find("span.time > a").text(), "less than a minute ago", "Make sure time is there" );
 
     });
     test("Test a few of the cases for the object style signature", function() {
